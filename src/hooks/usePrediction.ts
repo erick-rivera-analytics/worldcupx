@@ -1,49 +1,135 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { PredictionDraft } from '../types/prediction';
 import type { ScorePrediction } from '../types/tournament';
 import { mockMatches } from '../data/mock/matches';
 import { mockTeams } from '../data/mock/teams';
 import { calculateGroupStandings, getQualifiedTeams } from '../lib/tournament';
 import { calculateProgress } from '../lib/scoring';
-import { USE_MOCKS } from '../lib/constants';
-import { supabase } from '../lib/supabase';
+import { buildInitialBracket, createThirdPlaceSlots, summarizeFinalPrediction, updateBracketScore } from '../lib/bracketBuilder';
+import { validateGroupStep, validateKnockout, validateThirdPlaceAssignments } from '../lib/predictionValidation';
+
+function createInitialDraft(ticketId: string): PredictionDraft {
+  return {
+    ticketId,
+    groupScores: {},
+    thirdPlaceAssignments: [],
+    bracketMatches: [],
+    status: 'draft',
+    updatedAt: new Date().toISOString(),
+    submittedAt: null
+  };
+}
+
+function loadDraft(ticketId: string): PredictionDraft {
+  const key = `polla_prediction_${ticketId}`;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) as PredictionDraft : createInitialDraft(ticketId);
+  } catch {
+    return createInitialDraft(ticketId);
+  }
+}
 
 export function usePrediction(ticketId: string) {
-  const [predictions, setPredictions] = useState<ScorePrediction[]>([]);
+  const [draft, setDraft] = useState<PredictionDraft>(() => loadDraft(ticketId));
   const [saving, setSaving] = useState(false);
+  const groupMatches = useMemo(() => mockMatches.filter((match) => match.stage === 'GROUP'), []);
+  const knockoutMatches = useMemo(() => mockMatches.filter((match) => match.stage !== 'GROUP'), []);
 
-  function setScore(matchId: string, homeScore: number | null, awayScore: number | null, penaltyWinnerTeamId?: string | null) {
-    setPredictions((current) => {
-      const existing = current.find((prediction) => prediction.matchId === matchId);
-      if (existing) {
-        return current.map((prediction) => prediction.matchId === matchId ? { ...prediction, homeScore, awayScore, penaltyWinnerTeamId } : prediction);
-      }
-      return [...current, { matchId, homeScore, awayScore, penaltyWinnerTeamId }];
+  useEffect(() => {
+    window.localStorage.setItem(`polla_prediction_${ticketId}`, JSON.stringify(draft));
+  }, [draft, ticketId]);
+
+  function touch(next: PredictionDraft): PredictionDraft {
+    return { ...next, updatedAt: new Date().toISOString() };
+  }
+
+  function setScore(matchId: string, homeScore: number | null, awayScore: number | null) {
+    setDraft((current) => touch({
+      ...current,
+      groupScores: {
+        ...current.groupScores,
+        [matchId]: { matchId, homeScore, awayScore }
+      },
+      status: current.status === 'submitted' ? 'draft' : current.status
+    }));
+  }
+
+  function setThirdAssignment(slotId: string, teamId: string | null) {
+    setDraft((current) => {
+      const sourceSlots = current.thirdPlaceAssignments.length ? current.thirdPlaceAssignments : createThirdPlaceSlots(knockoutMatches);
+      return touch({
+        ...current,
+        thirdPlaceAssignments: sourceSlots.map((slot) => slot.slotId === slotId ? { ...slot, assignedTeamId: teamId } : slot),
+        bracketMatches: [],
+        status: 'draft'
+      });
     });
   }
 
-  async function saveScore(matchId: string) {
-    const prediction = predictions.find((item) => item.matchId === matchId);
-    if (!prediction) return;
+  function buildKnockoutBracket(): string[] {
+    const groupErrors = validateGroupStep(groupMatches, predictions);
+    const assignmentSlots = draft.thirdPlaceAssignments.length ? draft.thirdPlaceAssignments : createThirdPlaceSlots(knockoutMatches);
+    const thirdErrors = validateThirdPlaceAssignments(assignmentSlots, qualified.bestThirds);
+    if (groupErrors.length || thirdErrors.length) return [...groupErrors, ...thirdErrors];
+    setDraft((current) => touch({
+      ...current,
+      thirdPlaceAssignments: assignmentSlots,
+      bracketMatches: buildInitialBracket(knockoutMatches, standings, assignmentSlots),
+      status: 'ready_for_knockout'
+    }));
+    return [];
+  }
+
+  function setKnockoutScore(matchId: string, homeScore: number | null, awayScore: number | null, advancingTeamId?: string | null) {
+    setDraft((current) => touch({
+      ...current,
+      bracketMatches: updateBracketScore(current.bracketMatches, matchId, homeScore, awayScore, advancingTeamId),
+      status: current.status === 'submitted' ? 'ready_for_knockout' : current.status
+    }));
+  }
+
+  async function submitPrediction(): Promise<string[]> {
+    const errors = [...validateGroupStep(groupMatches, predictions), ...validateThirdPlaceAssignments(thirdPlaceSlots, qualified.bestThirds), ...validateKnockout(draft.bracketMatches)];
+    if (errors.length) return errors;
     setSaving(true);
     try {
-      if (!USE_MOCKS && supabase) {
-        const { error } = await supabase.rpc('save_prediction_match_score', {
-          p_ticket_id: ticketId,
-          p_match_id: matchId,
-          p_home_score: prediction.homeScore,
-          p_away_score: prediction.awayScore,
-          p_penalty_winner_team_id: prediction.penaltyWinnerTeamId ?? null
-        });
-        if (error) throw new Error(error.message);
-      }
+      setDraft((current) => touch({ ...current, status: 'submitted', submittedAt: new Date().toISOString() }));
     } finally {
       setSaving(false);
     }
+    return [];
   }
 
-  const standings = useMemo(() => calculateGroupStandings(mockTeams, mockMatches, predictions), [predictions]);
+  const predictions = useMemo<ScorePrediction[]>(() => Object.values(draft.groupScores), [draft.groupScores]);
+  const standings = useMemo(() => calculateGroupStandings(mockTeams, groupMatches, predictions), [groupMatches, predictions]);
   const qualified = useMemo(() => getQualifiedTeams(standings), [standings]);
-  const progress = useMemo(() => calculateProgress(predictions, mockMatches.length), [predictions]);
+  const thirdPlaceSlots = useMemo(() => draft.thirdPlaceAssignments.length ? draft.thirdPlaceAssignments : createThirdPlaceSlots(knockoutMatches), [draft.thirdPlaceAssignments, knockoutMatches]);
+  const finalSummary = useMemo(() => summarizeFinalPrediction(draft.bracketMatches), [draft.bracketMatches]);
+  const completedKnockout = draft.bracketMatches.filter((match) => match.homeScore !== null && match.awayScore !== null && match.advancingTeamId).length;
+  const completedThirdSlots = thirdPlaceSlots.filter((slot) => slot.assignedTeamId).length;
+  const progress = useMemo(
+    () => calculateProgress(predictions, groupMatches.length + thirdPlaceSlots.length + Math.max(draft.bracketMatches.length, knockoutMatches.length), completedThirdSlots + completedKnockout),
+    [completedKnockout, completedThirdSlots, draft.bracketMatches.length, groupMatches.length, knockoutMatches.length, predictions, thirdPlaceSlots.length]
+  );
 
-  return { teams: mockTeams, matches: mockMatches, predictions, setScore, saveScore, standings, qualified, progress, saving };
+  return {
+    draft,
+    teams: mockTeams,
+    matches: mockMatches,
+    groupMatches,
+    knockoutMatches,
+    predictions,
+    setScore,
+    setThirdAssignment,
+    buildKnockoutBracket,
+    setKnockoutScore,
+    submitPrediction,
+    standings,
+    qualified,
+    thirdPlaceSlots,
+    finalSummary,
+    progress,
+    saving
+  };
 }

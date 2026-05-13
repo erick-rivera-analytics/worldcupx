@@ -1,0 +1,79 @@
+import { useState } from 'react';
+import { Grid2X2, Network, Trophy } from 'lucide-react';
+import { DEFAULT_DEADLINE_ISO } from '../../lib/constants';
+import { isPredictionLocked } from '../../lib/tournament';
+import { usePrediction } from '../../hooks/usePrediction';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { GroupStageStep } from './GroupStageStep';
+import { KnockoutStep } from './KnockoutStep';
+import { PredictionLockBanner } from './PredictionLockBanner';
+import { PredictionProgress } from './PredictionProgress';
+import { PredictionSummaryStep } from './PredictionSummaryStep';
+
+const tabs = [
+  { key: 'groups', label: 'Grupos', icon: Grid2X2 },
+  { key: 'bracket', label: 'Eliminatorias', icon: Network },
+  { key: 'summary', label: 'Resumen', icon: Trophy }
+] as const;
+
+type Tab = typeof tabs[number]['key'];
+
+export function PredictionWizard({ ticketId }: { ticketId: string }) {
+  const [tab, setTab] = useState<Tab>('groups');
+  const [errors, setErrors] = useState<string[]>([]);
+  const prediction = usePrediction(ticketId);
+  const locked = isPredictionLocked(DEFAULT_DEADLINE_ISO);
+
+  function buildBracket() {
+    const nextErrors = prediction.buildKnockoutBracket();
+    setErrors(nextErrors);
+    if (!nextErrors.length) setTab('bracket');
+  }
+
+  async function submit() {
+    const nextErrors = await prediction.submitPrediction();
+    setErrors(nextErrors);
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-cup-gold">Ticket {ticketId}</p>
+          <h1 className="text-3xl font-black text-white">Predicción mundialista</h1>
+        </div>
+        <Badge tone={locked ? 'red' : prediction.draft.status === 'submitted' ? 'green' : 'gold'}>{locked ? 'Solo lectura' : prediction.draft.status === 'submitted' ? 'Enviado' : 'Editable'}</Badge>
+      </div>
+
+      <PredictionLockBanner locked={locked} submitted={prediction.draft.status === 'submitted'} />
+      <PredictionProgress value={prediction.progress} />
+
+      {errors.length > 0 && <div className="rounded-2xl border border-cup-red/30 bg-cup-red/10 p-4 text-sm font-bold text-red-100">{errors[0]}</div>}
+
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        {tabs.map((item) => {
+          const Icon = item.icon;
+          return <Button key={item.key} variant={tab === item.key ? 'primary' : 'secondary'} onClick={() => setTab(item.key)} icon={<Icon size={17} />}>{item.label}</Button>;
+        })}
+      </div>
+
+      {tab === 'groups' && (
+        <GroupStageStep
+          teams={prediction.teams}
+          matches={prediction.groupMatches}
+          predictions={prediction.predictions}
+          standings={prediction.standings}
+          bestThirds={prediction.qualified.bestThirds}
+          thirdPlaceSlots={prediction.thirdPlaceSlots}
+          disabled={locked}
+          onChange={prediction.setScore}
+          onAssignThird={prediction.setThirdAssignment}
+          onBuildBracket={buildBracket}
+        />
+      )}
+      {tab === 'bracket' && <KnockoutStep matches={prediction.draft.bracketMatches} teams={prediction.teams} disabled={locked} onBackToGroups={() => setTab('groups')} onChange={prediction.setKnockoutScore} />}
+      {tab === 'summary' && <PredictionSummaryStep ticketId={ticketId} draft={prediction.draft} teams={prediction.teams} summary={prediction.finalSummary} disabled={locked || prediction.saving} onSubmit={() => void submit()} />}
+    </div>
+  );
+}
