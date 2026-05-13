@@ -15,7 +15,7 @@ export function TicketReceipt({ code, employeeName }: { code: string; employeeNa
         </div>
         <Ticket className="text-cup-blue" />
       </div>
-      <p className="my-5 rounded-2xl bg-pitch-950/50 px-4 py-3 text-center text-3xl font-black tracking-[0.35em] text-cup-blue">{code}</p>
+      <p className="my-5 overflow-hidden rounded-2xl bg-pitch-950/50 px-4 py-3 text-center text-2xl font-black tracking-widest text-cup-blue sm:text-3xl">{code}</p>
       <div className="grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={copyCode} icon={<Copy size={16} />}>Copiar</Button>
         <Button variant="secondary" onClick={() => window.print()} icon={<Printer size={16} />}>Imprimir</Button>

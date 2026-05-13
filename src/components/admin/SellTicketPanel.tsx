@@ -1,39 +1,43 @@
 import { useState } from 'react';
-import { TicketPlus } from 'lucide-react';
+import { CheckCircle2, TicketPlus } from 'lucide-react';
 import type { EmployeeSearchResult } from '../../types/domain';
+import type { PersonProfile } from '../../types/personProfile';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { TicketReceipt } from '../tickets/TicketReceipt';
-import { supabase } from '../../lib/supabase';
-import { USE_MOCKS } from '../../lib/constants';
+import { sellTicketForCollaborator } from '../../services/ticketSalesService';
 
-function randomCode() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
+function employeeToProfile(employee: EmployeeSearchResult): PersonProfile {
+  return employee.sourceProfile ?? {
+    person_id: employee.personId,
+    person_name: employee.personName,
+    area_id: employee.areaId,
+    area_name: employee.areaName ?? employee.costArea,
+    national_id: employee.cedula ?? null,
+    gender: null,
+    job_title: employee.jobTitle,
+    associated_worker_name: null,
+    email: null,
+    phone_number: null,
+    job_classification_code: employee.jobClassificationCode ?? null
+  };
 }
 
 export function SellTicketPanel({ employee }: { employee: EmployeeSearchResult | null }) {
   const [lastCode, setLastCode] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function sellTicket() {
-    if (!employee?.cedula) return;
+    if (!employee) return;
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
-      if (USE_MOCKS || !supabase) {
-        setLastCode(randomCode());
-        return;
-      }
-
-      const { data, error: rpcError } = await supabase.rpc('sell_ticket', {
-        p_cedula: employee.cedula,
-        p_purchase_amount: null
-      });
-      if (rpcError) throw new Error(rpcError.message);
-      const result = data as { ok?: boolean; code?: string } | null;
-      if (!result?.ok || !result.code) throw new Error('No se pudo generar el ticket.');
+      const result = await sellTicketForCollaborator(employeeToProfile(employee));
       setLastCode(result.code);
+      setSuccessMessage('Compra registrada y codigo generado correctamente.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo agregar la compra.');
     } finally {
@@ -45,18 +49,27 @@ export function SellTicketPanel({ employee }: { employee: EmployeeSearchResult |
 
   return (
     <Card>
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
         <div>
           <p className="text-xs font-black uppercase tracking-widest text-white/45">Colaborador seleccionado</p>
           <h2 className="mt-1 text-2xl font-black text-white">{employee.personName}</h2>
-          <p className="mt-1 text-sm text-white/60">{employee.cedulaMasked} · {employee.areaId} · {employee.jobTitle}</p>
+          <div className="mt-3 grid gap-3 text-sm text-white/65 sm:grid-cols-2">
+            <p><span className="text-white/40">Cedula:</span> {employee.cedulaMasked}</p>
+            <p><span className="text-white/40">Codigo personal:</span> {employee.personId}</p>
+            <p><span className="text-white/40">Area:</span> {employee.areaName ?? employee.costArea ?? employee.areaId}</p>
+            <p><span className="text-white/40">Clasificacion:</span> {employee.jobClassificationCode ?? 'Pendiente'}</p>
+            <p className="sm:col-span-2"><span className="text-white/40">Cargo:</span> {employee.jobTitle}</p>
+          </div>
           <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
             <div className="rounded-2xl bg-pitch-800 p-3"><b>{employee.ticketsSold}</b><br /><span className="text-white/45">Vendidos</span></div>
             <div className="rounded-2xl bg-pitch-800 p-3"><b>{employee.ticketsClaimed}</b><br /><span className="text-white/45">Reclamados</span></div>
             <div className="rounded-2xl bg-pitch-800 p-3"><b>{employee.ticketsPending}</b><br /><span className="text-white/45">Pendientes</span></div>
           </div>
-          <Button className="mt-5 w-full" disabled={loading} onClick={() => void sellTicket()} icon={<TicketPlus size={17} />}>{loading ? 'Generando código' : 'Agregar compra y generar código'}</Button>
-          <p className="mt-3 text-xs text-white/55">En producción este botón llama la RPC `sell_ticket(p_cedula)`, que genera el código dentro de PostgreSQL.</p>
+          <Button className="mt-5 w-full" disabled={loading} onClick={() => void sellTicket()} icon={<TicketPlus size={17} />}>
+            {loading ? 'Generando codigo' : 'Agregar compra y generar codigo'}
+          </Button>
+          <p className="mt-3 text-xs text-white/55">La venta se guarda en Supabase con un codigo unico vinculado a cedula y codigo personal.</p>
+          {successMessage && <p className="mt-3 flex items-center gap-2 rounded-2xl bg-cup-green/15 p-3 text-sm font-bold text-green-100"><CheckCircle2 size={17} /> {successMessage}</p>}
           {error && <p className="mt-3 rounded-2xl bg-cup-red/15 p-3 text-sm font-bold text-red-100">{error}</p>}
         </div>
         {lastCode && <TicketReceipt code={lastCode} employeeName={employee.personName} />}

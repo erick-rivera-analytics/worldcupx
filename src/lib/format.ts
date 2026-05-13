@@ -4,8 +4,9 @@ export function maskCedula(cedula: string): string {
 }
 
 export function maskTicketCode(code: string): string {
-  if (code.length <= 2) return '••••••';
-  return `${code.slice(0, 2)}••••`;
+  if (code.length <= 2) return '******';
+  if (code.startsWith('WCX-')) return `${code.slice(0, 4)}****`;
+  return `${code.slice(0, 2)}****`;
 }
 
 export function formatPoints(points: number): string {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { Ticket } from '../types/domain';
 import { USE_MOCKS } from '../lib/constants';
+import { maskTicketCode } from '../lib/format';
 import { supabase } from '../lib/supabase';
 
 const mockTickets: Ticket[] = [
-  { id: 'ticket-1', codeMasked: 'A1••••', status: 'claimed', predictionStatus: 'in_progress', points: 18, ownerName: 'David Rivera', areaId: 'CAMPO', claimedAt: new Date().toISOString() },
-  { id: 'ticket-2', codeMasked: 'F7••••', status: 'sold', predictionStatus: 'pending', points: 0, ownerName: 'David Rivera', areaId: 'CAMPO' }
+  { id: 'ticket-1', codeMasked: 'WCX-****', status: 'claimed', predictionStatus: 'in_progress', points: 18, ownerName: 'David Rivera', areaId: 'CAMPO', claimedAt: new Date().toISOString() },
+  { id: 'ticket-2', codeMasked: 'F7****', status: 'sold', predictionStatus: 'pending', points: 0, ownerName: 'David Rivera', areaId: 'CAMPO' }
 ];
 
 export function useTickets() {
@@ -31,14 +32,15 @@ export function useTickets() {
   }
 
   async function claimTicket(code: string) {
+    const cleanCode = code.trim().toUpperCase();
     if (USE_MOCKS || !supabase) {
       setTickets((current) => [
         ...current,
-        { id: `mock-${code}`, codeMasked: `${code.slice(0, 2)}••••`, status: 'claimed', predictionStatus: 'pending', points: 0, ownerName: 'David Rivera', areaId: 'CAMPO', claimedAt: new Date().toISOString() }
+        { id: `mock-${cleanCode}`, codeMasked: maskTicketCode(cleanCode), status: 'claimed', predictionStatus: 'pending', points: 0, ownerName: 'David Rivera', areaId: 'CAMPO', claimedAt: new Date().toISOString() }
       ]);
       return;
     }
-    const { error: rpcError } = await supabase.rpc('claim_ticket', { p_code: code });
+    const { error: rpcError } = await supabase.rpc('claim_ticket', { p_code: cleanCode });
     if (rpcError) throw new Error(rpcError.message);
     await loadTickets();
   }

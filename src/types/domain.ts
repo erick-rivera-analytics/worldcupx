@@ -1,3 +1,5 @@
+import type { PersonProfile } from './personProfile';
+
 export type UserRole = 'collaborator' | 'admin_tthh' | 'super_admin';
 export type TicketStatus = 'sold' | 'claimed' | 'cancelled';
 export type PredictionStatus = 'pending' | 'in_progress' | 'submitted' | 'locked';
@@ -41,10 +43,13 @@ export interface EmployeeSearchResult {
   personId: string;
   personName: string;
   areaId: string;
+  areaName?: string | null;
   costArea: string;
   jobTitle: string;
+  jobClassificationCode?: string | null;
   isActive: boolean;
   ticketsSold: number;
   ticketsClaimed: number;
   ticketsPending: number;
+  sourceProfile?: PersonProfile;
 }

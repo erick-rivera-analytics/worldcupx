@@ -20,6 +20,7 @@ Ejecutar en Supabase SQL Editor, en este orden:
 12. `sql/11_views_rankings.sql`
 13. `sql/12_seed_config.sql`
 14. `sql/13_seed_demo_worldcup.sql`
+15. `sql/14_real_person_profile_integration.sql`
 
 `sql/99_reset_dev.sql` es destructivo y solo debe usarse en desarrollo.
 
@@ -75,7 +76,35 @@ Como usuario admin autenticado desde la app:
 select public.sell_ticket('0102030405');
 ```
 
-La función genera el código en PostgreSQL y reintenta si existe colisión.
+La función genera el código en PostgreSQL y reintenta si existe colisión. Para ventas desde la Edge Function de personal real, la app usa la sobrecarga:
+
+```sql
+select public.sell_ticket(
+  '1000',
+  '0107428849',
+  'NOMBRE COLABORADOR',
+  'MH1',
+  'MONJASHUAICO 1',
+  'TRABAJADOR OPERATIVO FLORICOLA O DEL AGRO',
+  'AGRICOLA'
+);
+```
+
+Los nuevos códigos usan formato `WCX-XXXXXXXX`. Los códigos legacy de 6 caracteres siguen siendo aceptados por el frontend y las RPCs.
+
+## Integración con personal real
+
+Ver `docs/09-edge-person-profile-integration.md`.
+
+La app consulta exclusivamente la Edge Function `pull-person-profile` mediante Supabase:
+
+```ts
+supabase.functions.invoke('pull-person-profile', {
+  body: { limit: 1000, offset: 0 }
+});
+```
+
+No guardar `LOCAL_API_URL`, `LOCAL_API_KEY` ni URLs `trycloudflare.com` en el frontend.
 
 ## Probar reclamo de tickets adicionales
 

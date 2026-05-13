@@ -7,8 +7,14 @@ create table if not exists public.employees (
     person_id text,
     person_name text not null,
     area_id text,
+    area_name text,
     cost_area text,
+    gender text,
     job_title text,
+    associated_worker_name text,
+    email text,
+    phone_number text,
+    job_classification_code text,
     is_active boolean not null default true,
     source_updated_at timestamptz,
     created_at timestamptz not null default now(),
@@ -16,6 +22,12 @@ create table if not exists public.employees (
 );
 
 alter table public.employees add column if not exists source_updated_at timestamptz;
+alter table public.employees add column if not exists area_name text;
+alter table public.employees add column if not exists gender text;
+alter table public.employees add column if not exists associated_worker_name text;
+alter table public.employees add column if not exists email text;
+alter table public.employees add column if not exists phone_number text;
+alter table public.employees add column if not exists job_classification_code text;
 
 create table if not exists public.profiles (
     id uuid primary key default gen_random_uuid(),

@@ -15,8 +15,12 @@
 
 - `generate_ticket_code()`
 - `sell_ticket(p_cedula text, p_purchase_amount numeric default null)`
+- `sell_ticket(p_person_id text, p_national_id text, p_person_name text, p_area_id text, p_area_name text, p_job_title text, p_job_classification_code text)`
 - `claim_ticket(p_code text)`
+- `claim_ticket(p_national_id text, p_ticket_code text)`
 - `cancel_ticket(p_ticket_id uuid, p_reason text)`
+
+La sobrecarga nueva de `sell_ticket` se usa desde `#/admin/sales` despues de consultar la Edge Function `pull-person-profile`. Inserta/actualiza `employees`, crea `tickets` y devuelve el codigo `WCX-XXXXXXXX`.
 
 ## Predicciones
 

@@ -2,7 +2,7 @@
 
 ## Core
 
-- `employees`: colaboradores cargados por TTHH.
+- `employees`: colaboradores activos. En la integracion real se alimenta desde la Edge Function y usa `cedula` como equivalente interno de `national_id`.
 - `profiles`: perfil vinculado a `auth.users` y a `employees`.
 - `app_config`: deadline, reglas y parámetros.
 - `admin_audit_log`: trazabilidad de acciones admin.
@@ -16,7 +16,7 @@
 
 ## Predicciones
 
-- `tickets`: participaciones compradas.
+- `tickets`: participaciones compradas. Guarda el codigo unico, cedula, empleado vinculado y snapshots de persona/area/cargo para auditoria de venta.
 - `prediction_headers`: cabecera de predicción por ticket.
 - `prediction_match_scores`: marcadores pronosticados.
 - `predicted_group_standings`: tabla simulada por ticket.

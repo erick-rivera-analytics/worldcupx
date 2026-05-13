@@ -25,7 +25,7 @@ export function RegisterPage({ onRegister, onNavigate, loading, error }: { onReg
 
   async function validateTicket() {
     if (!validateCedulaBasic(cleanCedula)) return setLocalError('La cédula debe tener entre 10 y 13 dígitos.');
-    if (!validateTicketCodeBasic(cleanTicketCode)) return setLocalError('El código de ticket debe tener 6 letras o números.');
+    if (!validateTicketCodeBasic(cleanTicketCode)) return setLocalError('El codigo de ticket debe ser ABC123 o WCX-XXXXXXXX.');
     setValidating(true);
     setLocalError(null);
     try {
@@ -64,7 +64,7 @@ export function RegisterPage({ onRegister, onNavigate, loading, error }: { onReg
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-[1fr_180px] sm:items-end">
             <Input label="Cédula" value={cedula} onChange={(event) => setCedula(event.target.value)} placeholder="0102030405" />
-            <Input label="Código de ticket" value={ticketCode} onChange={(event) => setTicketCode(event.target.value.toUpperCase())} maxLength={6} placeholder="ABC123" />
+            <Input label="Codigo de ticket" value={ticketCode} onChange={(event) => setTicketCode(event.target.value.toUpperCase())} maxLength={12} placeholder="WCX-ABC12345" />
           </div>
 
           <Button type="button" variant={validation?.ok ? 'secondary' : 'primary'} className="w-full" disabled={validating || loading} onClick={() => void validateTicket()} icon={validation?.ok ? <CheckCircle2 size={17} /> : <TicketCheck size={17} />}>

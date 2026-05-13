@@ -1,73 +1,97 @@
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { RefreshCw, Search, UserCheck, Users } from 'lucide-react';
 import type { EmployeeSearchResult } from '../../types/domain';
+import type { CollaboratorSearchResult } from '../../types/personProfile';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { supabase } from '../../lib/supabase';
-import { USE_MOCKS } from '../../lib/constants';
-import { maskCedula, normalizeCedula } from '../../lib/format';
+import { useCollaboratorSearch } from '../../hooks/useCollaboratorSearch';
+import { usePersonProfiles } from '../../hooks/usePersonProfiles';
+import { collaboratorToEmployeeSearchResult } from '../../services/ticketSalesService';
 
-const demoEmployee: EmployeeSearchResult = {
-  cedula: '0102030405',
-  cedulaMasked: '01******05',
-  personId: '2888',
-  personName: 'David Rivera',
-  areaId: 'CAMPO',
-  costArea: 'COSECHA',
-  jobTitle: 'Analista de datos',
-  isActive: true,
-  ticketsSold: 2,
-  ticketsClaimed: 1,
-  ticketsPending: 1
-};
+function isNumericQuery(value: string): boolean {
+  const compact = value.replace(/\s+/g, '');
+  return compact.length > 0 && /^\d+$/.test(compact);
+}
+
+function ResultCard({ result, onSelect }: { result: CollaboratorSearchResult; onSelect: (employee: EmployeeSearchResult) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(collaboratorToEmployeeSearchResult(result))}
+      className="w-full rounded-2xl border border-white/10 bg-pitch-800 p-4 text-left transition hover:border-cup-blue/40 hover:bg-pitch-700"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="truncate text-base font-black text-white">{result.person_name ?? 'Colaborador sin nombre'}</p>
+          <p className="mt-1 text-sm text-white/60">
+            Cedula {result.masked_national_id ?? 'sin registro'} · Codigo {result.person_id}
+          </p>
+        </div>
+        <span className="inline-flex w-fit items-center rounded-full border border-cup-blue/25 px-3 py-1 text-xs font-bold text-cup-blue">
+          Seleccionar
+        </span>
+      </div>
+      <div className="mt-3 grid gap-2 text-sm text-white/60 md:grid-cols-2">
+        <span>{result.area_name ?? result.area_id ?? 'Area pendiente'}</span>
+        <span>{result.job_title ?? 'Cargo pendiente'}</span>
+      </div>
+    </button>
+  );
+}
 
 export function EmployeeSearch({ onSelect }: { onSelect: (employee: EmployeeSearchResult) => void }) {
-  const [cedula, setCedula] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { profiles, loading, error, reload } = usePersonProfiles();
+  const [query, setQuery] = useState('');
+  const results = useCollaboratorSearch(profiles, query);
+  const showShortHint = query.trim().length > 0 && query.trim().length < 2 && !isNumericQuery(query);
+  const showNoResults = !loading && !showShortHint && query.trim().length > 0 && results.length === 0;
 
-  async function search() {
-    const cleanCedula = normalizeCedula(cedula || (demoEmployee.cedula ?? '0102030405'));
-    setLoading(true);
-    setError(null);
-    try {
-      if (USE_MOCKS || !supabase) {
-        onSelect({ ...demoEmployee, cedula: cleanCedula, cedulaMasked: maskCedula(cleanCedula) });
-        return;
-      }
-
-      const { data, error: rpcError } = await supabase.rpc('validate_active_employee', { p_cedula: cleanCedula });
-      if (rpcError) throw new Error(rpcError.message);
-      const result = data as { ok?: boolean; employee_id?: string; person_name?: string; area_id?: string } | null;
-      if (!result?.ok) throw new Error('Colaborador no encontrado o inactivo.');
-
-      onSelect({
-        cedula: cleanCedula,
-        cedulaMasked: maskCedula(cleanCedula),
-        personId: result.employee_id ?? cleanCedula,
-        personName: result.person_name ?? 'Colaborador',
-        areaId: result.area_id ?? 'SIN_AREA',
-        costArea: 'Pendiente',
-        jobTitle: 'Pendiente',
-        isActive: true,
-        ticketsSold: 0,
-        ticketsClaimed: 0,
-        ticketsPending: 0
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo buscar el colaborador.');
-    } finally {
-      setLoading(false);
+  function handleSearchClick() {
+    if (results.length === 1) {
+      onSelect(collaboratorToEmployeeSearchResult(results[0]));
     }
   }
 
   return (
     <div className="rounded-2xl border border-white/10 bg-pitch-900 p-4">
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-        <Input label="Buscar colaborador por cédula" value={cedula} onChange={(event) => setCedula(event.target.value)} placeholder="0102030405" />
-        <Button onClick={() => void search()} disabled={loading} icon={<Search size={17} />}>{loading ? 'Buscando' : 'Buscar'}</Button>
+      <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
+        <Input
+          label="Buscar por cedula, codigo o nombre"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Ej. 0107428849, 1000, David Rivera"
+          icon={<Search size={17} />}
+          helper={loading ? 'Cargando colaboradores desde Supabase...' : `${profiles.length.toLocaleString('es-EC')} colaboradores disponibles en memoria.`}
+        />
+        <Button type="button" onClick={handleSearchClick} disabled={loading || results.length !== 1} icon={<UserCheck size={17} />}>
+          Seleccionar
+        </Button>
+        <Button type="button" variant="secondary" onClick={() => void reload()} disabled={loading} icon={<RefreshCw size={17} />}>
+          Recargar
+        </Button>
       </div>
-      {error && <p className="mt-3 rounded-2xl bg-cup-red/15 p-3 text-sm font-bold text-red-100">{error}</p>}
+
+      {error && (
+        <p className="mt-3 rounded-2xl bg-cup-red/15 p-3 text-sm font-bold text-red-100">
+          No se pudo consultar la base de colaboradores. Verifique la conexion con Supabase/API.
+        </p>
+      )}
+      {showShortHint && <p className="mt-3 text-sm text-white/55">Escribe al menos 2 caracteres para buscar por nombre. Para cedula o codigo puedes escribir numeros parciales.</p>}
+      {showNoResults && <p className="mt-3 rounded-2xl bg-pitch-800 p-3 text-sm font-bold text-white/70">No se encontro ningun colaborador con ese dato.</p>}
+
+      {results.length > 0 && (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-bold text-white/65">
+            <Users size={16} />
+            <span>{results.length} coincidencia{results.length === 1 ? '' : 's'}</span>
+          </div>
+          <div className="grid gap-3">
+            {results.map((result) => (
+              <ResultCard key={`${result.person_id}-${result.national_id}`} result={result} onSelect={onSelect} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

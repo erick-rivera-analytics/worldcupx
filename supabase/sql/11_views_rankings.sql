@@ -5,7 +5,7 @@ create or replace view public.v_ranking_public as
 select
     row_number() over (order by coalesce(ts.total_points, 0) desc, coalesce(ts.exact_count, 0) desc, t.created_at asc)::int as rank,
     t.id as ticket_id,
-    'Ticket ' || left(t.code, 2) || '••••' as alias,
+    'Ticket ' || case when left(t.code, 4) = 'WCX-' then left(t.code, 4) || '****' else left(t.code, 2) || '****' end as alias,
     e.person_name as employee_name,
     e.area_id,
     coalesce(ts.total_points, 0)::int as points,
@@ -41,7 +41,7 @@ from public.score_details sd;
 create or replace view public.v_my_tickets as
 select
     t.id,
-    left(t.code, 2) || '••••' as "codeMasked",
+    case when left(t.code, 4) = 'WCX-' then left(t.code, 4) || '****' else left(t.code, 2) || '****' end as "codeMasked",
     t.status,
     coalesce(ph.status, 'pending') as "predictionStatus",
     coalesce(ts.total_points, 0) as points,

@@ -64,9 +64,11 @@ alter table public.prediction_match_scores add constraint prediction_score_nonne
 );
 
 create index if not exists idx_employees_cedula on public.employees (cedula);
+create index if not exists idx_employees_person_id on public.employees (person_id);
 create index if not exists idx_profiles_user_id on public.profiles (user_id);
 create index if not exists idx_profiles_cedula on public.profiles (cedula);
 create index if not exists idx_tickets_cedula on public.tickets (cedula);
+create index if not exists idx_tickets_person_id on public.tickets (person_id);
 create index if not exists idx_tickets_employee_id on public.tickets (employee_id);
 create index if not exists idx_tickets_claimed_by on public.tickets (claimed_by_user_id);
 create index if not exists idx_prediction_headers_ticket on public.prediction_headers (ticket_id);

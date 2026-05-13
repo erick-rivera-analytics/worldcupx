@@ -44,7 +44,8 @@ export function validateCedulaBasic(cedula: string): boolean {
 }
 
 export function validateTicketCodeBasic(ticketCode: string): boolean {
-  return /^[A-Z0-9]{6}$/.test(cleanTicketCode(ticketCode));
+  const code = cleanTicketCode(ticketCode);
+  return /^[A-Z0-9]{6}$/.test(code) || /^WCX-[A-Z0-9]{8}$/.test(code);
 }
 
 function mapProfile(row: { user_id: string; cedula: string; display_name: string; area_id: string | null; role: AppUser['role'] }): AppUser {

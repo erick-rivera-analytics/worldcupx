@@ -10,8 +10,14 @@ export interface Database {
           person_id: string | null;
           person_name: string;
           area_id: string | null;
+          area_name: string | null;
           cost_area: string | null;
+          gender: string | null;
           job_title: string | null;
+          associated_worker_name: string | null;
+          email: string | null;
+          phone_number: string | null;
+          job_classification_code: string | null;
           is_active: boolean;
           source_updated_at: string | null;
           created_at: string;
@@ -41,6 +47,12 @@ export interface Database {
           code: string;
           employee_id: string;
           cedula: string;
+          person_id: string | null;
+          person_name: string | null;
+          area_id: string | null;
+          area_name: string | null;
+          job_title: string | null;
+          job_classification_code: string | null;
           sold_by_user_id: string;
           status: 'sold' | 'claimed' | 'cancelled';
           claimed_by_user_id: string | null;
@@ -90,7 +102,17 @@ export interface Database {
         Returns: Json;
       };
       sell_ticket: {
-        Args: { p_cedula: string; p_purchase_amount?: number | null };
+        Args:
+          | { p_cedula: string; p_purchase_amount?: number | null }
+          | {
+              p_person_id: string;
+              p_national_id: string;
+              p_person_name: string;
+              p_area_id?: string | null;
+              p_area_name?: string | null;
+              p_job_title?: string | null;
+              p_job_classification_code?: string | null;
+            };
         Returns: Json;
       };
       claim_ticket: {
