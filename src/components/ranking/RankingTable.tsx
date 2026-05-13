@@ -21,7 +21,7 @@ export function RankingTable({ rows }: { rows: RankingRow[] }) {
                   <td className="font-bold">{row.alias}</td>
                   <td>{row.employeeName}</td>
                   <td><Badge tone="blue">{row.areaId}</Badge></td>
-                  <td className="font-black text-cup-gold">{row.points}</td>
+                  <td className="font-black text-cup-blue">{row.points}</td>
                   <td>{row.exactCount}</td>
                   <td>{row.resultCount}</td>
                   <td>{row.bonusPoints}</td>

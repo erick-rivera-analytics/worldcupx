@@ -45,7 +45,7 @@ export function PredictionWizard({ ticketId }: { ticketId: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-cup-gold">Ticket {ticketId}</p>
+          <p className="text-xs font-black uppercase tracking-widest text-cup-blue">Ticket {ticketId}</p>
           <h1 className="text-3xl font-black text-white">Predicción mundialista</h1>
         </div>
         <Badge tone={locked ? 'red' : prediction.draft.status === 'submitted' ? 'green' : 'gold'}>{locked ? 'Solo lectura' : prediction.draft.status === 'submitted' ? 'Enviado' : 'Editable'}</Badge>

@@ -13,7 +13,7 @@ export function AdminRecalculateScoresPanel({ status, processed, updatedAt, onRe
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-cup-gold">Ranking</p>
+          <p className="text-xs font-black uppercase tracking-widest text-cup-blue">Ranking</p>
           <h3 className="text-xl font-black text-white">Recalcular ranking mock</h3>
           <p className="mt-1 text-sm text-white/60">{updatedAt ? `Último cálculo: ${new Date(updatedAt).toLocaleString()}` : 'Aún no hay cálculo registrado.'}</p>
         </div>

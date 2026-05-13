@@ -57,7 +57,7 @@ export function RegisterPage({ onRegister, onNavigate, loading, error }: { onReg
           <p className="mt-2 text-sm text-white/60">Primero compra tu ticket con TTHH. Luego registra tu cuenta con tu cédula y el código recibido.</p>
         </div>
 
-        <div className="mb-5 rounded-2xl border border-cup-gold/25 bg-cup-gold/10 p-4 text-sm text-yellow-50">
+        <div className="mb-5 rounded-2xl border border-cup-blue/25 bg-cup-blue/10 p-4 text-sm text-sky-50">
           <b>Flujo seguro:</b> validamos que el ticket esté vendido, activo y asignado a tu cédula antes de crear tu contraseña.
         </div>
 
@@ -87,7 +87,7 @@ export function RegisterPage({ onRegister, onNavigate, loading, error }: { onReg
           {(localError || error) && <p className="rounded-2xl bg-cup-red/15 p-3 text-sm font-bold text-red-100">{localError || error}</p>}
           <Button className="w-full" disabled={loading || !validation?.ok}>{loading ? 'Registrando' : 'Crear cuenta y reclamar ticket'}</Button>
         </form>
-        <button onClick={() => onNavigate('#/login')} className="mt-5 w-full text-sm font-bold text-cup-gold hover:underline">Ya tengo cuenta</button>
+        <button onClick={() => onNavigate('#/login')} className="mt-5 w-full text-sm font-bold text-cup-blue hover:underline">Ya tengo cuenta</button>
       </Card>
     </div>
   );

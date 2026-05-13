@@ -3,9 +3,9 @@ import { Badge } from '../ui/Badge';
 
 export function PredictionLockBanner({ locked, submitted }: { locked: boolean; submitted: boolean }) {
   return (
-    <div className={`rounded-2xl border p-4 ${locked ? 'border-cup-red/30 bg-cup-red/10' : submitted ? 'border-cup-green/30 bg-cup-green/10' : 'border-cup-gold/30 bg-cup-gold/10'}`}>
+    <div className={`rounded-2xl border p-4 ${locked ? 'border-cup-red/30 bg-cup-red/10' : submitted ? 'border-cup-green/30 bg-cup-green/10' : 'border-cup-blue/30 bg-cup-blue/10'}`}>
       <div className="flex flex-wrap items-center gap-3">
-        {locked ? <AlertTriangle className="text-cup-red" /> : <CheckCircle2 className={submitted ? 'text-cup-green' : 'text-cup-gold'} />}
+        {locked ? <AlertTriangle className="text-cup-red" /> : <CheckCircle2 className={submitted ? 'text-cup-green' : 'text-cup-blue'} />}
         <div className="min-w-0 flex-1">
           <p className="font-black text-white">{locked ? 'Predicción bloqueada por deadline' : submitted ? 'Predicción enviada' : 'Borrador editable'}</p>
           <p className="text-sm text-white/60">{locked ? 'Solo lectura. Los cambios deben validarse también en backend cuando Supabase esté activo.' : 'Puedes ajustar marcadores antes del cierre y volver a enviar.'}</p>

@@ -23,11 +23,11 @@ export function PredictionSummaryStep({ ticketId, draft, teams, summary, disable
 
   return (
     <div className="grid gap-4 lg:grid-cols-[.8fr_1.2fr]">
-      <Card className="bg-gradient-to-br from-cup-gold/20 to-white/[0.06]">
-        <Trophy className="mb-4 text-cup-gold" size={42} />
+      <Card className="bg-gradient-to-br from-cup-blue/20 to-white/[0.06]">
+        <Trophy className="mb-4 text-cup-blue" size={42} />
         <p className="text-xs font-black uppercase tracking-widest text-white/45">Ticket {ticketId}</p>
         <div className="mt-2">
-          <p className="text-sm font-black uppercase tracking-widest text-cup-gold">Campeón</p>
+          <p className="text-sm font-black uppercase tracking-widest text-cup-blue">Campeón</p>
           <TeamIdentity team={champion} label="Pendiente" size="lg" className="mt-2 text-2xl" />
         </div>
         <div className="mt-4 space-y-2">

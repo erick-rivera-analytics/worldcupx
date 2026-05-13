@@ -12,17 +12,17 @@ const config: Config = {
           700: '#1b4f7d'
         },
         cup: {
-          gold: '#f4c95d',
+          gold: '#8ea5bf',
           green: '#22c55e',
-          blue: '#38bdf8',
+          blue: '#60a5fa',
           red: '#fb7185'
         }
       },
       boxShadow: {
-        glow: '0 24px 80px rgba(56, 189, 248, 0.22)'
+        glow: '0 18px 56px rgba(96, 165, 250, 0.16)'
       },
       backgroundImage: {
-        'stadium': 'radial-gradient(circle at 18% 18%, rgba(56,189,248,.20), transparent 30%), radial-gradient(circle at 82% 5%, rgba(96,165,250,.14), transparent 32%), linear-gradient(135deg,#061224,#0b1f38 48%,#111c32)'
+        'stadium': 'radial-gradient(circle at 18% 18%, rgba(96,165,250,.16), transparent 30%), radial-gradient(circle at 82% 5%, rgba(148,163,184,.12), transparent 32%), linear-gradient(135deg,#061224,#0b1f38 48%,#111c32)'
       },
       animation: {
         float: 'float 5s ease-in-out infinite',
